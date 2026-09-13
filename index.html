@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bilancio — le mie finanze</title>
+<meta name="description" content="Traccia entrate e uscite. I dati restano sul tuo dispositivo.">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bilancio">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="2.5" y="13" width="4.2" height="8" rx="1.6"/>
+      <rect x="9.9" y="8" width="4.2" height="13" rx="1.6"/>
+      <rect x="17.3" y="3" width="4.2" height="18" rx="1.6"/>
+    </svg>
+    <span class="brand-name">Bilancio</span>
+  </div>
+  <div class="topbar-actions">
+    <span class="privacy-chip" title="I dati sono salvati solo su questo dispositivo">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path d="M12 2.8 4.5 6v6c0 4.6 3.2 8.3 7.5 9.3 4.3-1 7.5-4.7 7.5-9.3V6L12 2.8Z"/></svg>
+      <span class="privacy-text">Solo su questo dispositivo</span>
+    </span>
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="Cambia tema" title="Cambia tema">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="ico ico-sun"><circle cx="12" cy="12" r="4.2"/><path d="M12 1.8v3M12 19.2v3M22.2 12h-3M4.8 12h-3M19.2 4.8l-2.1 2.1M6.9 17.1l-2.1 2.1M19.2 19.2l-2.1-2.1M6.9 6.9 4.8 4.8" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="ico ico-moon"><path d="M20.5 14.5A8.6 8.6 0 0 1 9.5 3.5a8.8 8.8 0 1 0 11 11Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Sezioni">
+  <button class="tab is-active" role="tab" aria-selected="true" data-view="riepilogo">Riepilogo</button>
+  <button class="tab" role="tab" aria-selected="false" data-view="movimenti">Movimenti</button>
+  <button class="tab" role="tab" aria-selected="false" data-view="impostazioni">Impostazioni</button>
+</nav>
+
+<main class="wrap">
+
+  <section id="view-riepilogo" class="view" role="tabpanel">
+
+    <div class="monthbar">
+      <button class="icon-btn" id="prevMonth" type="button" aria-label="Mese precedente">
+        <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h2 id="monthLabel" class="month-label" aria-live="polite">—</h2>
+      <button class="icon-btn" id="nextMonth" type="button" aria-label="Mese successivo">
+        <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M9 4.5 16.5 12 9 19.5" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="btn-ghost" id="todayBtn" type="button">Oggi</button>
+    </div>
+
+    <div class="hero card">
+      <div class="hero-head">
+        <span class="label">Saldo del mese</span>
+        <span class="delta" id="heroDelta"></span>
+      </div>
+      <div class="hero-figure" id="heroSaldo">—</div>
+      <div class="hero-sub" id="heroSub"></div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="card stat">
+        <div class="stat-head"><span class="swatch swatch-in" aria-hidden="true"></span><span class="label">Entrate</span></div>
+        <div class="stat-value" id="kpiIn">—</div>
+        <div class="stat-sub" id="kpiInSub"></div>
+      </div>
+      <div class="card stat">
+        <div class="stat-head"><span class="swatch swatch-out" aria-hidden="true"></span><span class="label">Uscite</span></div>
+        <div class="stat-value" id="kpiOut">—</div>
+        <div class="stat-sub" id="kpiOutSub"></div>
+      </div>
+      <div class="card stat">
+        <div class="stat-head"><span class="label">Tasso di risparmio</span></div>
+        <div class="stat-value" id="kpiRate">—</div>
+        <div class="stat-sub" id="kpiRateSub">quota di entrate non spesa</div>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <div class="card-head">
+        <div>
+          <h3 class="card-title">Andamento degli ultimi 12 mesi</h3>
+          <p class="card-note">Entrate e uscite per mese</p>
+        </div>
+        <div class="card-tools">
+          <div class="legend">
+            <span class="legend-item"><span class="swatch swatch-in"></span>Entrate</span>
+            <span class="legend-item"><span class="swatch swatch-out"></span>Uscite</span>
+          </div>
+          <button class="btn-ghost btn-table" type="button" data-table="trend">Tabella</button>
+        </div>
+      </div>
+      <div class="chart-scroll"><div id="chartTrend" class="chart"></div></div>
+      <div id="tableTrend" class="table-view" hidden></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card chart-card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Entrate per categoria</h3>
+            <p class="card-note" id="noteCatIn">Mese corrente</p>
+          </div>
+          <button class="btn-ghost btn-table" type="button" data-table="catIn">Tabella</button>
+        </div>
+        <div id="chartCatIn" class="chart"></div>
+        <div id="tableCatIn" class="table-view" hidden></div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Uscite per categoria</h3>
+            <p class="card-note" id="noteCatOut">Mese corrente</p>
+          </div>
+          <button class="btn-ghost btn-table" type="button" data-table="catOut">Tabella</button>
+        </div>
+        <div id="chartCatOut" class="chart"></div>
+        <div id="tableCatOut" class="table-view" hidden></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3 class="card-title">Ultimi movimenti</h3>
+        <button class="btn-ghost" type="button" data-goto="movimenti">Vedi tutti</button>
+      </div>
+      <div id="recentList" class="list"></div>
+    </div>
+  </section>
+
+  <section id="view-movimenti" class="view" role="tabpanel" hidden>
+    <div class="card filters">
+      <div class="filter-row">
+        <label class="field">
+          <span class="field-label">Periodo</span>
+          <select id="fPeriod">
+            <option value="month">Mese selezionato</option>
+            <option value="year">Anno corrente</option>
+            <option value="all">Tutto</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Tipo</span>
+          <select id="fType">
+            <option value="all">Tutti</option>
+            <option value="entrata">Solo entrate</option>
+            <option value="uscita">Solo uscite</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Categoria</span>
+          <select id="fCat"><option value="all">Tutte</option></select>
+        </label>
+        <label class="field field-grow">
+          <span class="field-label">Cerca</span>
+          <input id="fSearch" type="search" placeholder="nota o categoria…" autocomplete="off">
+        </label>
+      </div>
+      <div class="filter-summary" id="filterSummary"></div>
+    </div>
+
+    <div class="card">
+      <div id="fullList" class="list"></div>
+    </div>
+  </section>
+
+  <section id="view-impostazioni" class="view" role="tabpanel" hidden>
+
+    <div class="card">
+      <h3 class="card-title">Backup dei dati</h3>
+      <p class="card-note">
+        I movimenti sono salvati solo nel browser di questo dispositivo. Non vengono inviati da nessuna parte,
+        ma <strong>si perdono se cancelli i dati del browser</strong>. Esporta un backup ogni tanto e usalo
+        anche per spostare i dati tra PC e telefono.
+      </p>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="exportBtn" type="button">Esporta backup (.json)</button>
+        <button class="btn" id="importBtn" type="button">Importa backup</button>
+        <button class="btn" id="csvBtn" type="button">Esporta CSV (Excel)</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+      <p class="card-note" id="storageInfo"></p>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">Categorie</h3>
+      <p class="card-note">Personalizza le voci che compaiono nel modulo di inserimento.</p>
+
+      <div class="cat-editor">
+        <div>
+          <div class="cat-editor-head"><span class="swatch swatch-in"></span><h4>Entrate</h4></div>
+          <div class="chips" id="catsIn"></div>
+          <form class="add-cat" data-kind="entrata">
+            <input type="text" placeholder="Nuova categoria" maxlength="28" required>
+            <button class="btn btn-sm" type="submit">Aggiungi</button>
+          </form>
+        </div>
+        <div>
+          <div class="cat-editor-head"><span class="swatch swatch-out"></span><h4>Uscite</h4></div>
+          <div class="chips" id="catsOut"></div>
+          <form class="add-cat" data-kind="uscita">
+            <input type="text" placeholder="Nuova categoria" maxlength="28" required>
+            <button class="btn btn-sm" type="submit">Aggiungi</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-danger">
+      <h3 class="card-title">Zona pericolosa</h3>
+      <p class="card-note">Cancella definitivamente tutti i movimenti e le categorie personalizzate di questo dispositivo.</p>
+      <button class="btn btn-danger" id="wipeBtn" type="button">Cancella tutti i dati</button>
+    </div>
+
+    <p class="footnote">Bilancio · app locale, nessun account, nessun server.</p>
+  </section>
+</main>
+
+<button class="fab" id="addBtn" type="button" aria-label="Aggiungi movimento">
+  <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke-width="2.4" stroke-linecap="round"/></svg>
+  <span class="fab-text">Aggiungi</span>
+</button>
+
+<dialog id="sheet" class="sheet">
+  <form id="txForm">
+    <div class="sheet-head">
+      <h3 id="sheetTitle">Nuovo movimento</h3>
+      <button type="button" class="icon-btn" id="closeSheet" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="segmented" role="radiogroup" aria-label="Tipo di movimento">
+      <button type="button" class="seg is-active" data-kind="entrata" role="radio" aria-checked="true">
+        <span class="seg-sign">+</span> Entrata
+      </button>
+      <button type="button" class="seg" data-kind="uscita" role="radio" aria-checked="false">
+        <span class="seg-sign">−</span> Uscita
+      </button>
+    </div>
+
+    <label class="field amount-field">
+      <span class="field-label">Importo</span>
+      <div class="amount-wrap">
+        <span class="cur">€</span>
+        <input id="fAmount" type="text" inputmode="decimal" placeholder="0,00" required autocomplete="off">
+      </div>
+    </label>
+
+    <div class="two-col">
+      <label class="field">
+        <span class="field-label">Data</span>
+        <input id="fDate" type="date" required>
+      </label>
+      <label class="field">
+        <span class="field-label">Categoria</span>
+        <select id="fCategory" required></select>
+      </label>
+    </div>
+
+    <label class="field">
+      <span class="field-label">Nota <span class="opt">(facoltativa)</span></span>
+      <input id="fNote" type="text" maxlength="80" placeholder="es. stipendio settembre" autocomplete="off">
+    </label>
+
+    <p class="form-error" id="formError" hidden></p>
+
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-danger-ghost" id="deleteTx" hidden>Elimina</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="cancelTx">Annulla</button>
+      <button type="submit" class="btn btn-primary" id="saveTx">Salva</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="tip" class="tip" hidden></div>
+<div id="toast" class="toast" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>

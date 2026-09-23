@@ -12,6 +12,11 @@
 (function () {
   'use strict';
 
+  // Numero di versione dell'app. Va alzato a ogni pubblicazione: compare in
+  // fondo alla home e serve a capire al volo se un dispositivo e' rimasto
+  // indietro (era successo con le notifiche: pulsanti nuovi, codice vecchio).
+  var VERSIONE = '1.4.0';
+
   var SALT = 'hub.v1.';
   var PIN_SHA = '046b66f3ad38c06c5d4a75068c4601e95c07b5a9adc04ed6a6ff8c9e4d762bd9';
   var PIN_DJB = 'a307ee9b';           // ripiego quando crypto.subtle non c'è (file://)
@@ -244,6 +249,8 @@
         '</button>';
     }).join('');
 
+    mostraVersione();
+
     $$('.svc-card', host).forEach(function (b) {
       b.addEventListener('click', function () {
         var id = b.getAttribute('data-id');
@@ -303,6 +310,56 @@
     else if (attivo || !$('#screen-service').hidden) closeService(false);
   }
 
+
+  /* ─────────────────────────── versione ─────────────────────────── */
+  // Chiede al service worker quale versione sta effettivamente servendo.
+  function versioneServiceWorker() {
+    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+      return Promise.resolve(null);
+    }
+    return new Promise(function (ok) {
+      var scaduto = setTimeout(function () { ok(null); }, 1200);
+      try {
+        var canale = new MessageChannel();
+        canale.port1.onmessage = function (ev) {
+          clearTimeout(scaduto);
+          ok(ev.data && ev.data.cache);
+        };
+        navigator.serviceWorker.controller.postMessage({ type: 'versione' }, [canale.port2]);
+      } catch (e) { clearTimeout(scaduto); ok(null); }
+    });
+  }
+
+  function mostraVersione() {
+    var riga = $('#verText');
+    if (!riga) return;
+    riga.textContent = 'Hub ' + VERSIONE;
+    versioneServiceWorker().then(function (cache) {
+      riga.textContent = 'Hub ' + VERSIONE + (cache ? ' \u00b7 ' + cache : ' \u00b7 senza service worker');
+    });
+  }
+
+  function controllaAggiornamenti() {
+    var box = $('.home-version');
+    if (!('serviceWorker' in navigator)) { toast('Aggiornamenti non disponibili qui.'); return; }
+    toast('Controllo in corso\u2026');
+    navigator.serviceWorker.getRegistration().then(function (reg) {
+      if (!reg) { toast('Service worker non attivo: ricarica la pagina.'); return; }
+      return reg.update().then(function () {
+        // se ne sta arrivando uno nuovo, lo troviamo in installazione o in attesa
+        if (reg.installing || reg.waiting) {
+          if (box) box.classList.add('is-stale');
+          toast('Aggiornamento trovato: applico e ricarico\u2026');
+          if (reg.waiting) { try { reg.waiting.postMessage({ type: 'attiva' }); } catch (e) {} }
+          setTimeout(function () { location.reload(); }, 1800);
+        } else {
+          toast('Sei gi\u00e0 alla versione pi\u00f9 recente');
+          mostraVersione();
+        }
+      });
+    }).catch(function () { toast('Controllo non riuscito.'); });
+  }
+
   /* ─────────────────────────── avvio ─────────────────────────── */
   function init() {
     initTheme();
@@ -323,6 +380,7 @@
     $('#themeBtn').addEventListener('click', toggleTheme);
     $('#lockBtn').addEventListener('click', lockNow);
     $('#backBtn').addEventListener('click', back);
+    $('#verCheck').addEventListener('click', controllaAggiornamenti);
 
     window.addEventListener('hashchange', route);
 
@@ -368,6 +426,7 @@
   }
 
   window.Hub = {
+    versione: VERSIONE,
     register: register,
     toast: toast,
     esc: esc,

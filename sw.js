@@ -5,7 +5,7 @@
    Nessun dato personale passa di qui: i movimenti vivono in localStorage,
    che il service worker non vede e non tocca. */
 
-var CACHE = 'hub-v4';
+var CACHE = 'hub-v5';
 var ASSETS = [
   './',
   './index.html',
@@ -63,6 +63,16 @@ self.addEventListener('fetch', function (ev) {
   );
 });
 
+
+/* Risponde alla pagina che chiede quale versione sta servendo, e accetta
+   l'ordine di subentrare subito quando l'utente forza un aggiornamento. */
+self.addEventListener('message', function (ev) {
+  if (!ev.data) return;
+  if (ev.data.type === 'versione' && ev.ports && ev.ports[0]) {
+    ev.ports[0].postMessage({ cache: CACHE });
+  }
+  if (ev.data.type === 'attiva') self.skipWaiting();
+});
 
 /* ══════════════════════ notifiche push del Calendario ══════════════════════
 

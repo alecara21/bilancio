@@ -360,24 +360,36 @@
     <!-- OPZIONI -->
     <section data-view-panel="opzioni" class="view" hidden>
       <div class="card">
-        <h4 class="card-title">Sveglie sul telefono</h4>
+        <h4 class="card-title">Notifiche sul telefono</h4>
+        <p class="card-note" data-el="pushState">—</p>
+        <div class="btn-row">
+          <button class="btn btn-primary" data-act="pushOn" type="button">Attiva le notifiche</button>
+          <button class="btn" data-act="pushTest" type="button">Invia una prova</button>
+          <button class="btn" data-act="pushOff" type="button">Disattiva</button>
+        </div>
         <p class="card-note">
-          Un sito web non può far suonare promemoria a telefono chiuso: è un limite delle
-          piattaforme, non dell'app. La via affidabile è passare l'evento al
-          <strong>calendario del telefono</strong>, che poi suona da solo — anche offline.
-          Trovi il pulsante dentro ogni evento.
+          Vanno attivate su <strong>ogni dispositivo</strong> separatamente. Su iPhone funzionano
+          solo dopo aver aggiunto l'app alla schermata Home.
+        </p>
+        <p class="card-note">
+          <strong>Cosa sa il server:</strong> solo a che ora avvisarti. Il titolo degli eventi, le
+          note e i compleanni restano sul telefono e non vengono mai inviati.
+        </p>
+      </div>
+
+      <div class="card">
+        <h4 class="card-title">Calendario del telefono</h4>
+        <p class="card-note">
+          In alternativa (o in aggiunta) puoi passare gli eventi al calendario di sistema, che
+          suona da solo anche offline. Il pulsante è dentro ogni evento; qui li esporti tutti.
         </p>
         <div class="btn-row">
-          <button class="btn btn-primary" data-act="icsAll" type="button">Esporta tutti gli eventi (.ics)</button>
+          <button class="btn" data-act="icsAll" type="button">Esporta tutti gli eventi (.ics)</button>
         </div>
         <p class="card-note" data-el="notifState"></p>
         <div class="btn-row">
-          <button class="btn" data-act="askNotif" type="button">Attiva avvisi nell'app</button>
+          <button class="btn" data-act="askNotif" type="button">Attiva avvisi dentro l'app</button>
         </div>
-        <p class="card-note">
-          Gli avvisi nell'app compaiono mentre il sito è aperto e, alla riapertura, ti segnalano
-          i promemoria scaduti nel frattempo.
-        </p>
       </div>
 
       <div class="card">

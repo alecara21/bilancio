@@ -342,8 +342,27 @@
     }
 
     if ('serviceWorker' in navigator) {
+      // Quando esce una versione nuova, il service worker la installa e prende
+      // il controllo: a quel punto ricarichiamo una volta sola, altrimenti la
+      // pagina resterebbe con il codice vecchio già caricato in memoria.
+      // alla primissima installazione il controllo passa da "nessuno" al service
+      // worker: quello non è un aggiornamento e non deve ricaricare nulla
+      var avevaControllo = !!navigator.serviceWorker.controller;
+      var giaRicaricato = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (!avevaControllo || giaRicaricato) return;
+        giaRicaricato = true;
+        location.reload();
+      });
+
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('sw.js').catch(function () {});
+        navigator.serviceWorker.register('sw.js').then(function (reg) {
+          reg.update();
+          // ricontrolla a ogni ritorno sull'app
+          document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) { try { reg.update(); } catch (e) {} }
+          });
+        }).catch(function () {});
       });
     }
   }

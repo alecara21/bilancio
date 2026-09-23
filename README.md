@@ -121,30 +121,34 @@ in **CSV** per Excel.
 - Ogni evento può avere **più sveglie**: all'ora, 15/30 minuti, 1/2 ore, 1/2 giorni,
   1 settimana prima. Le scegli toccando le etichette, quante ne vuoi.
 
-### Come far suonare davvero le sveglie
+### Le sveglie: due strade
 
-Questo è il punto importante, ed è bene essere chiari.
+**1. Notifiche push — arrivano anche ad app chiusa** *(consigliata)*
 
-**Un sito web non può far scattare un promemoria a telefono chiuso.** Non è un limite
-dell'app: su iPhone le notifiche programmate in locale non esistono per i siti web, e su
-Android il sistema spegne il processo dopo pochi minuti. Nessuna riga di codice aggira
-questa cosa.
+Da **Opzioni → Attiva le notifiche**. Vanno attivate su **ogni dispositivo**
+separatamente. Su iPhone funzionano solo dopo aver aggiunto l'app alla schermata Home.
 
-La via che funziona è passare l'evento al **calendario del telefono**:
+Serve un piccolo server, che sta su Cloudflare (gratuito) e vive nella cartella
+`hub-push`. **Cosa sa quel server: solo a che ora avvisarti.** Il titolo degli eventi,
+le note e i compleanni restano sul telefono e non vengono mai inviati — la notifica
+parte vuota e il testo lo aggiunge il telefono al momento di mostrarla.
 
-1. Apri l'evento nell'app.
-2. Premi **"Aggiungi al calendario del telefono"**: scarica un file `.ics`.
-3. Aprilo: iPhone e Android lo propongono al calendario di sistema, **con le sveglie già
-   dentro**.
+I dati del **Bilancio** non toccano quel server in nessun modo.
 
-Da quel momento suona il calendario del telefono: affidabile, anche offline, anche a
-telefono bloccato. Da Opzioni puoi anche esportare tutti gli eventi in un colpo solo.
+**2. Calendario del telefono — non dipende da nessun server**
 
-Dentro l'app restano comunque due aiuti: gli **avvisi mentre l'app è aperta** (vanno
-attivati da Opzioni) e l'**elenco dei promemoria scaduti** che compare quando riapri.
+Apri l'evento e premi **"Aggiungi al calendario del telefono"**: scarica un file `.ics`
+con le sveglie già dentro, lo apri e il calendario di sistema se lo prende. Da quel
+momento suona lui, anche offline. Da Opzioni li esporti tutti in un colpo solo.
+
+Le due strade si possono usare insieme.
+
+Dentro l'app restano poi gli **avvisi mentre è aperta** e l'**elenco dei promemoria
+scaduti** che compare quando riapri.
 
 > Nota: sia le notifiche sia le sveglie del calendario rispettano la modalità silenziosa
-> del telefono. Nessuna app web può scavalcarla.
+> del telefono. Sono avvisi, non sveglie in stile allarme: nessuna app web può scavalcare
+> il silenzioso.
 
 ---
 
@@ -219,8 +223,8 @@ I grafici sono SVG generati a mano.
 | `css/calendario.css` | stili del calendario |
 | `js/shell.js` | PIN, navigazione, tema, registro dei servizi |
 | `js/bilancio.js` | dati, calcoli, grafici, backup del tracker |
-| `js/calendario.js` | eventi, ricorrenze, sveglie, generazione `.ics` |
-| `sw.js` | funzionamento offline |
+| `js/calendario.js` | eventi, ricorrenze, sveglie, `.ics`, iscrizione push |
+| `sw.js` | funzionamento offline e ricezione delle notifiche |
 | `manifest.json` | dati per l'installazione come app |
 
 ### Aprire l'app senza metterla online
@@ -233,3 +237,11 @@ app e la modalità offline, che richiedono un indirizzo `http://` o `https://`.
 I movimenti sono salvati sotto la stessa chiave (`bilancio.v1`) e la memoria locale è
 legata al dominio, non alla cartella: se pubblichi su `<tuo-utente>.github.io`, i dati
 già inseriti restano al loro posto anche cambiando il nome del repo.
+
+### Il server delle notifiche
+
+Sta nella cartella `hub-push`, separata da questo sito, e ha un suo README con i dettagli.
+È un Cloudflare Worker che ogni minuto controlla se c'è qualcuno da avvisare.
+
+**La chiave privata (`hub-push/vapid-keys.json`) non va mai messa su GitHub.** C'è già un
+`.gitignore` che la esclude, ma tienilo a mente se un giorno sposti quella cartella.

@@ -1,25 +1,28 @@
-/* Service worker: rende l'app utilizzabile anche offline.
-   Strategia: network-first per l'HTML (così un aggiornamento arriva subito),
-   cache-first per gli asset statici. Nessun dato finanziario passa di qui:
-   i movimenti vivono in localStorage, che il service worker non tocca. */
+/* Service worker: rende l'app utilizzabile anche senza rete.
+   HTML: prima la rete (così un aggiornamento arriva subito), cache come riserva.
+   Asset statici: prima la cache, più veloce.
+   Nessun dato personale passa di qui: i movimenti vivono in localStorage,
+   che il service worker non vede e non tocca. */
 
-var CACHE = 'bilancio-v1';
+var CACHE = 'hub-v1';
 var ASSETS = [
   './',
   './index.html',
-  './style.css',
-  './app.js',
+  './css/base.css',
+  './css/bilancio.css',
+  './js/shell.js',
+  './js/bilancio.js',
   './manifest.json',
-  './favicon.svg',
-  './icon-192.png',
-  './icon-512.png'
+  './icons/favicon.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
 ];
 
 self.addEventListener('install', function (ev) {
   ev.waitUntil(
     caches.open(CACHE).then(function (c) {
-      return Promise.all(ASSETS.map(function (url) {
-        return c.add(url).catch(function () { /* un asset mancante non blocca l'installazione */ });
+      return Promise.all(ASSETS.map(function (u) {
+        return c.add(u).catch(function () { /* un file mancante non blocca l'installazione */ });
       }));
     }).then(function () { return self.skipWaiting(); })
   );
@@ -28,9 +31,7 @@ self.addEventListener('install', function (ev) {
 self.addEventListener('activate', function (ev) {
   ev.waitUntil(
     caches.keys().then(function (keys) {
-      return Promise.all(keys.map(function (k) {
-        return k === CACHE ? null : caches.delete(k);
-      }));
+      return Promise.all(keys.map(function (k) { return k === CACHE ? null : caches.delete(k); }));
     }).then(function () { return self.clients.claim(); })
   );
 });
@@ -38,9 +39,7 @@ self.addEventListener('activate', function (ev) {
 self.addEventListener('fetch', function (ev) {
   var req = ev.request;
   if (req.method !== 'GET') return;
-
-  var url = new URL(req.url);
-  if (url.origin !== self.location.origin) return;
+  if (new URL(req.url).origin !== self.location.origin) return;
 
   var isDoc = req.mode === 'navigate' || (req.headers.get('accept') || '').indexOf('text/html') > -1;
 
@@ -51,9 +50,7 @@ self.addEventListener('fetch', function (ev) {
         caches.open(CACHE).then(function (c) { c.put(req, copy); });
         return res;
       }).catch(function () {
-        return caches.match(req).then(function (hit) {
-          return hit || caches.match('./index.html');
-        });
+        return caches.match(req).then(function (hit) { return hit || caches.match('./index.html'); });
       })
     );
     return;

@@ -1,19 +1,19 @@
 {
-  "name": "Bilancio — le mie finanze",
-  "short_name": "Bilancio",
-  "description": "Traccia entrate e uscite. I dati restano sul tuo dispositivo.",
+  "name": "Hub — i miei servizi",
+  "short_name": "Hub",
+  "description": "Raccolta di strumenti personali. Tutti i dati restano sul dispositivo.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#f5f5f3",
-  "theme_color": "#ffffff",
+  "background_color": "#0b0f1a",
+  "theme_color": "#0b0f1a",
   "lang": "it",
   "dir": "ltr",
-  "categories": ["finance", "productivity"],
+  "categories": ["productivity", "finance", "utilities"],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

@@ -388,7 +388,7 @@ img { max-width: 100%; }
 .field-label { font-size: 12.5px; color: var(--ink-2); font-weight: 500; }
 .opt { color: var(--ink-3); font-weight: 400; }
 
-input[type="text"], input[type="search"], input[type="date"], select {
+input[type="text"], input[type="search"], input[type="date"], input[type="time"], select {
   font: inherit; font-size: 16px;  /* 16px evita lo zoom automatico su iOS */
   color: var(--ink); background: var(--surface-2);
   border: 1px solid var(--brd); border-radius: 12px;
@@ -419,10 +419,22 @@ input::placeholder { color: var(--ink-3); }
   border-radius: var(--r-xl) var(--r-xl) 0 0;
   padding: var(--sp-4) var(--sp-4) calc(var(--sp-4) + env(safe-area-inset-bottom));
   display: grid; gap: var(--sp-3);
+  /* un modulo lungo (es. quello degli eventi) deve poter scorrere:
+     senza questo, su schermi bassi il pulsante Salva resta irraggiungibile */
+  max-height: 100dvh; overflow-y: auto; overscroll-behavior: contain;
 }
 @media (min-width: 560px) {
   .sheet { margin: auto; }
-  .sheet form { border-radius: var(--r-xl); border-bottom: 1px solid var(--brd-2); padding-bottom: var(--sp-4); }
+  .sheet form {
+    border-radius: var(--r-xl); border-bottom: 1px solid var(--brd-2);
+    padding-bottom: var(--sp-4); max-height: calc(100dvh - 32px);
+  }
+}
+/* l'intestazione resta a vista mentre il resto scorre */
+.sheet-head {
+  position: sticky; top: calc(var(--sp-4) * -1); z-index: 2;
+  background: var(--glass-solid);
+  padding: var(--sp-4) 0 var(--sp-2); margin: calc(var(--sp-4) * -1) 0 0;
 }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; }
 .sheet-head h3 { font-size: 17.5px; }

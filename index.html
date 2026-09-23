@@ -16,6 +16,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/bilancio.css">
+<link rel="stylesheet" href="css/calendario.css">
 </head>
 <body>
 
@@ -282,6 +283,234 @@
   </div>
 </template>
 
+<!-- ══════════════════════════════ MODELLO: CALENDARIO ══════════════════════════════ -->
+<template id="tpl-calendario">
+  <div class="cal">
+    <div class="segtabs" role="tablist" aria-label="Sezioni del calendario">
+      <button class="segtab is-active" role="tab" aria-selected="true" data-view="mese">Mese</button>
+      <button class="segtab" role="tab" aria-selected="false" data-view="agenda">Agenda</button>
+      <button class="segtab" role="tab" aria-selected="false" data-view="opzioni">Opzioni</button>
+    </div>
+
+    <!-- MESE -->
+    <section data-view-panel="mese" class="view">
+      <div class="monthbar">
+        <button class="icon-btn" data-act="prevMonth" type="button" aria-label="Mese precedente">
+          <svg viewBox="0 0 24 24" class="ico"><path d="M15 4.5 7.5 12 15 19.5" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <h3 data-el="monthLabel" class="month-label" aria-live="polite">—</h3>
+        <button class="icon-btn" data-act="nextMonth" type="button" aria-label="Mese successivo">
+          <svg viewBox="0 0 24 24" class="ico"><path d="M9 4.5 16.5 12 9 19.5" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="btn-ghost" data-act="today" type="button">Oggi</button>
+      </div>
+
+      <div class="card cal-card">
+        <div class="cal-dow" aria-hidden="true">
+          <span>lun</span><span>mar</span><span>mer</span><span>gio</span><span>ven</span><span>sab</span><span>dom</span>
+        </div>
+        <div class="cal-grid" data-el="grid" role="grid" aria-label="Griglia del mese"></div>
+        <div class="cal-legend">
+          <span class="legend-item"><span class="ev-dot t-appuntamento"></span>Appuntamento</span>
+          <span class="legend-item"><span class="ev-dot t-compleanno"></span>Compleanno</span>
+          <span class="legend-item"><span class="ev-dot t-promemoria"></span>Promemoria</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h4 class="card-title" data-el="dayTitle">Giorno</h4>
+          <button class="btn-ghost" data-act="addOnDay" type="button">Aggiungi qui</button>
+        </div>
+        <div data-el="dayList" class="ev-list"></div>
+      </div>
+    </section>
+
+    <!-- AGENDA -->
+    <section data-view-panel="agenda" class="view" hidden>
+      <div class="card filters">
+        <div class="filter-row">
+          <label class="field">
+            <span class="field-label">Mostra</span>
+            <select data-el="fRange">
+              <option value="30">Prossimi 30 giorni</option>
+              <option value="90">Prossimi 3 mesi</option>
+              <option value="365">Prossimo anno</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">Tipo</span>
+            <select data-el="fType">
+              <option value="all">Tutti</option>
+              <option value="appuntamento">Appuntamenti</option>
+              <option value="compleanno">Compleanni</option>
+              <option value="promemoria">Promemoria</option>
+            </select>
+          </label>
+          <label class="field field-grow">
+            <span class="field-label">Cerca</span>
+            <input data-el="fSearch" type="search" placeholder="titolo o nota…" autocomplete="off">
+          </label>
+        </div>
+        <div class="filter-summary" data-el="agendaSummary"></div>
+      </div>
+      <div class="card"><div data-el="agendaList" class="ev-list"></div></div>
+    </section>
+
+    <!-- OPZIONI -->
+    <section data-view-panel="opzioni" class="view" hidden>
+      <div class="card">
+        <h4 class="card-title">Sveglie sul telefono</h4>
+        <p class="card-note">
+          Un sito web non può far suonare promemoria a telefono chiuso: è un limite delle
+          piattaforme, non dell'app. La via affidabile è passare l'evento al
+          <strong>calendario del telefono</strong>, che poi suona da solo — anche offline.
+          Trovi il pulsante dentro ogni evento.
+        </p>
+        <div class="btn-row">
+          <button class="btn btn-primary" data-act="icsAll" type="button">Esporta tutti gli eventi (.ics)</button>
+        </div>
+        <p class="card-note" data-el="notifState"></p>
+        <div class="btn-row">
+          <button class="btn" data-act="askNotif" type="button">Attiva avvisi nell'app</button>
+        </div>
+        <p class="card-note">
+          Gli avvisi nell'app compaiono mentre il sito è aperto e, alla riapertura, ti segnalano
+          i promemoria scaduti nel frattempo.
+        </p>
+      </div>
+
+      <div class="card">
+        <h4 class="card-title">Preferenze</h4>
+        <label class="field">
+          <span class="field-label">Orario per gli eventi "tutto il giorno"</span>
+          <input data-el="defTime" type="time" value="09:00">
+        </label>
+        <p class="card-note">Le sveglie degli eventi senza orario si calcolano a partire da qui.</p>
+      </div>
+
+      <div class="card">
+        <h4 class="card-title">Backup dei dati</h4>
+        <p class="card-note">Gli eventi sono salvati solo su questo dispositivo. Esporta un backup per non perderli e per spostarli tra PC e telefono.</p>
+        <div class="btn-row">
+          <button class="btn btn-primary" data-act="export" type="button">Esporta backup (.json)</button>
+          <button class="btn" data-act="import" type="button">Importa backup</button>
+          <input type="file" data-el="importFile" accept="application/json,.json" hidden>
+        </div>
+        <p class="card-note" data-el="storageInfo"></p>
+      </div>
+
+      <div class="card card-danger">
+        <h4 class="card-title">Zona pericolosa</h4>
+        <p class="card-note">Cancella definitivamente tutti gli eventi di questo dispositivo.</p>
+        <button class="btn btn-danger" data-act="wipe" type="button">Cancella tutti gli eventi</button>
+      </div>
+    </section>
+
+    <button class="fab" data-act="add" type="button" aria-label="Aggiungi evento">
+      <svg viewBox="0 0 24 24" class="ico"><path d="M12 5v14M5 12h14" fill="none" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <span class="fab-text">Aggiungi</span>
+    </button>
+  </div>
+</template>
+
+<!-- Modulo evento -->
+<dialog id="evSheet" class="sheet">
+  <form id="evForm">
+    <div class="sheet-head">
+      <h3 id="evTitle">Nuovo evento</h3>
+      <button type="button" class="icon-btn" id="evClose" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="segmented seg-3" role="radiogroup" aria-label="Tipo di evento">
+      <button type="button" class="seg is-active" data-tipo="appuntamento" role="radio" aria-checked="true">
+        <svg viewBox="0 0 24 24" class="ico"><rect x="3.5" y="5" width="17" height="15.5" rx="2.6" fill="none" stroke-width="1.9"/><path d="M8 3v4M16 3v4M3.5 10h17" fill="none" stroke-width="1.9" stroke-linecap="round"/></svg>
+        Appunt.
+      </button>
+      <button type="button" class="seg" data-tipo="compleanno" role="radio" aria-checked="false">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M4 20.5h16v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6Z" fill="none" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 12.5v-4M12 5.5a1.5 1.5 0 1 1 0 3" fill="none" stroke-width="1.9" stroke-linecap="round"/></svg>
+        Compleanno
+      </button>
+      <button type="button" class="seg" data-tipo="promemoria" role="radio" aria-checked="false">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M12 3.5a6 6 0 0 0-6 6v4l-1.6 3h15.2L18 13.5v-4a6 6 0 0 0-6-6Z" fill="none" stroke-width="1.9" stroke-linejoin="round"/><path d="M10 19.5a2 2 0 0 0 4 0" fill="none" stroke-width="1.9" stroke-linecap="round"/></svg>
+        Promem.
+      </button>
+    </div>
+
+    <label class="field">
+      <span class="field-label">Titolo</span>
+      <input id="evName" type="text" maxlength="70" placeholder="es. dentista" required autocomplete="off">
+    </label>
+
+    <div class="two-col">
+      <label class="field">
+        <span class="field-label">Data</span>
+        <input id="evDate" type="date" required>
+      </label>
+      <label class="field">
+        <span class="field-label">Ripeti</span>
+        <select id="evRepeat">
+          <option value="nessuna">Mai</option>
+          <option value="annuale">Ogni anno</option>
+          <option value="mensile">Ogni mese</option>
+          <option value="settimanale">Ogni settimana</option>
+        </select>
+      </label>
+    </div>
+
+    <label class="switch-row">
+      <span class="field-label">Tutto il giorno</span>
+      <input id="evAllDay" type="checkbox" class="switch">
+    </label>
+
+    <div class="two-col" id="evTimeRow">
+      <label class="field">
+        <span class="field-label">Ora</span>
+        <input id="evTime" type="time" value="09:00">
+      </label>
+      <label class="field">
+        <span class="field-label">Durata</span>
+        <select id="evDur">
+          <option value="0">Nessuna</option>
+          <option value="15">15 minuti</option>
+          <option value="30">30 minuti</option>
+          <option value="60" selected>1 ora</option>
+          <option value="90">1 ora e mezza</option>
+          <option value="120">2 ore</option>
+          <option value="180">3 ore</option>
+          <option value="480">Mezza giornata</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="field">
+      <span class="field-label">Sveglie <span class="opt">(puoi sceglierne più di una)</span></span>
+      <div class="alarm-grid" id="evAlarms"></div>
+    </div>
+
+    <label class="field">
+      <span class="field-label">Nota <span class="opt">(facoltativa)</span></span>
+      <input id="evNote" type="text" maxlength="120" placeholder="es. portare le lastre" autocomplete="off">
+    </label>
+
+    <p class="form-error" id="evError" hidden></p>
+
+    <button type="button" class="btn btn-ics" id="evIcs" hidden>
+      <svg viewBox="0 0 24 24" class="ico"><path d="M12 3.5v11m0 0 4-4m-4 4-4-4" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 16.5v2a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+      Aggiungi al calendario del telefono
+    </button>
+
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-danger-ghost" id="evDelete" hidden>Elimina</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="evCancel">Annulla</button>
+      <button type="submit" class="btn btn-primary" id="evSave">Salva</button>
+    </div>
+  </form>
+</dialog>
+
 <!-- Modulo di inserimento: fuori dagli screen, così il top layer resta pulito -->
 <dialog id="sheet" class="sheet">
   <form id="txForm">
@@ -337,5 +566,6 @@
 
 <script src="js/shell.js"></script>
 <script src="js/bilancio.js"></script>
+<script src="js/calendario.js"></script>
 </body>
 </html>

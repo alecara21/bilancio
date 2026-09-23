@@ -4,14 +4,16 @@
    Nessun dato personale passa di qui: i movimenti vivono in localStorage,
    che il service worker non vede e non tocca. */
 
-var CACHE = 'hub-v1';
+var CACHE = 'hub-v2';
 var ASSETS = [
   './',
   './index.html',
   './css/base.css',
   './css/bilancio.css',
+  './css/calendario.css',
   './js/shell.js',
   './js/bilancio.js',
+  './js/calendario.js',
   './manifest.json',
   './icons/favicon.svg',
   './icons/icon-192.png',

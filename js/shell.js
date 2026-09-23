@@ -51,8 +51,8 @@
       icona: '<path d="M3.5 13.5h3.4v7H3.5zM10.3 8h3.4v12.5h-3.4zM17.1 3.5h3.4v17h-3.4z"/>'
     },
     {
-      id: 'scelta2', nome: 'Scelta 2', desc: 'Da definire', tint: 'var(--svc-2)',
-      icona: '<rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2.2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2.2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="2.2"/><rect x="13" y="13" width="7.5" height="7.5" rx="2.2"/>'
+      id: 'calendario', nome: 'Calendario', desc: 'Appuntamenti e promemoria', tint: 'var(--svc-2)',
+      icona: '<rect x="3" y="5" width="18" height="16" rx="2.8" fill="none" stroke-width="1.9"/><path d="M8 2.5v5M16 2.5v5M3 10.5h18" fill="none" stroke-width="1.9" stroke-linecap="round"/>'
     },
     {
       id: 'scelta3', nome: 'Scelta 3', desc: 'Da definire', tint: 'var(--svc-3)',

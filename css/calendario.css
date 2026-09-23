@@ -1,0 +1,176 @@
+/* =========================================================================
+   Servizio "Calendario" — appuntamenti, compleanni, promemoria.
+   Token e primitive vengono da base.css.
+   I tre tipi di evento usano colori validati per daltonismo (ΔE min 9.2),
+   e sono sempre accompagnati da icona ed etichetta: mai colore da solo.
+   ========================================================================= */
+
+.cal { display: grid; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4) 0; }
+.cal > * { min-width: 0; }
+
+/* colori dei tipi */
+.t-appuntamento { --ev: var(--svc-1); }
+.t-compleanno   { --ev: var(--svc-2); }
+.t-promemoria   { --ev: var(--svc-3); }
+
+.ev-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  display: inline-block; background: var(--ev, var(--ink-3));
+}
+
+/* ─────────────────────────── griglia del mese ─────────────────────────── */
+.cal-card { padding: var(--sp-3); }
+
+.cal-dow {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 6px;
+}
+.cal-dow span {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em;
+}
+
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+
+.cal-day {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 3px; padding: 6px 0 5px;
+  min-height: 46px; border-radius: 11px;
+  border: 1px solid transparent; background: transparent;
+  font: inherit; font-size: 14px; color: var(--ink); cursor: pointer;
+  transition: background 140ms ease, transform 120ms var(--ease);
+}
+.cal-day::after { content: ""; position: absolute; inset: -1px; }  /* area tocco piena */
+.cal-day:hover { background: var(--wash); }
+.cal-day:active { transform: scale(0.94); }
+.cal-day.is-out { color: var(--ink-3); opacity: .5; }
+.cal-day.is-today { font-weight: 700; color: var(--accent); }
+.cal-day.is-today .cal-num::before {
+  content: ""; position: absolute; inset: -5px -7px; border-radius: 9px;
+  background: var(--accent-soft); z-index: -1;
+}
+.cal-day.is-sel { border-color: var(--accent); background: var(--accent-soft); }
+
+.cal-num { position: relative; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.cal-dots { display: flex; gap: 3px; min-height: 7px; align-items: center; }
+.cal-more { font-size: 9px; color: var(--ink-3); font-weight: 700; line-height: 1; }
+
+.cal-legend {
+  display: flex; flex-wrap: wrap; gap: 6px var(--sp-3);
+  margin-top: var(--sp-3); padding-top: var(--sp-3);
+  border-top: 1px solid var(--brd-2);
+}
+
+/* ─────────────────────────── elenco eventi ─────────────────────────── */
+.ev-list { display: grid; }
+
+.ev-day-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 11.5px; color: var(--ink-3); text-transform: capitalize;
+  padding: var(--sp-3) 0 5px; border-bottom: 1px solid var(--brd-2);
+}
+.ev-day-head:first-child { padding-top: 0; }
+.ev-day-head .quando { text-transform: none; font-variant-numeric: tabular-nums; }
+
+.ev-row {
+  display: grid; grid-template-columns: 38px 1fr auto;
+  align-items: center; gap: var(--sp-3);
+  min-height: 58px; padding: 9px 0;
+  border: 0; border-bottom: 1px solid var(--brd-2);
+  background: none; width: 100%; text-align: left;
+  font: inherit; color: inherit; cursor: pointer;
+  transition: background 140ms ease, transform 120ms var(--ease);
+}
+.ev-row:last-child { border-bottom: 0; }
+.ev-row:hover { background: var(--wash); }
+.ev-row:active { transform: scale(0.99); background: var(--wash); }
+.ev-row.is-past { opacity: .55; }
+
+.ev-ico {
+  width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ev) 16%, transparent); color: var(--ev);
+}
+.ev-ico .ico { width: 19px; height: 19px; }
+
+.ev-main { min-width: 0; display: block; }
+.ev-name { display: block; font-size: 14.5px; font-weight: 570; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev-meta {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 12.5px; color: var(--ink-3); margin-top: 1px;
+}
+.ev-meta .sep { opacity: .5; }
+.ev-bell { display: inline-flex; align-items: center; gap: 3px; }
+.ev-bell .ico { width: 12px; height: 12px; }
+.ev-rep { display: inline-flex; align-items: center; gap: 3px; }
+.ev-rep .ico { width: 12px; height: 12px; }
+
+.ev-when {
+  font-size: 13.5px; font-weight: 620; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right;
+}
+.ev-when .giorni { display: block; font-size: 11px; font-weight: 500; color: var(--ink-3); }
+.ev-when.is-soon { color: var(--accent); }
+
+/* ─────────────────────────── modulo evento ─────────────────────────── */
+.seg-3 { grid-template-columns: repeat(3, 1fr); }
+.seg-3 .seg { flex-direction: column; gap: 3px; font-size: 11.5px; padding: 7px 2px; }
+.seg-3 .seg .ico { width: 19px; height: 19px; }
+.seg-3 .seg[data-tipo="appuntamento"].is-active { background: color-mix(in srgb, var(--svc-1) 16%, transparent); color: var(--svc-1); }
+.seg-3 .seg[data-tipo="compleanno"].is-active   { background: color-mix(in srgb, var(--svc-2) 16%, transparent); color: var(--svc-2); }
+.seg-3 .seg[data-tipo="promemoria"].is-active   { background: color-mix(in srgb, var(--svc-3) 16%, transparent); color: var(--svc-3); }
+
+.switch-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp-3); min-height: 44px; cursor: pointer;
+}
+.switch {
+  appearance: none; flex: none; cursor: pointer;
+  width: 50px; height: 30px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--brd);
+  position: relative; transition: background 180ms var(--ease), border-color 180ms ease;
+}
+.switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--ink-3); transition: transform 200ms var(--ease), background 180ms ease;
+}
+.switch:checked { background: var(--accent); border-color: var(--accent); }
+.switch:checked::after { transform: translateX(20px); background: #fff; }
+
+.alarm-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+.alarm-chip {
+  font: inherit; font-size: 12.5px; font-weight: 520;
+  min-height: 38px; padding: 8px 13px; border-radius: 999px;
+  border: 1px solid var(--brd); background: var(--surface-2); color: var(--ink-2);
+  cursor: pointer; position: relative;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+.alarm-chip::after { content: ""; position: absolute; inset: -4px 0; }
+.alarm-chip.is-on {
+  background: var(--accent-soft); border-color: var(--accent); color: var(--accent);
+  font-weight: 600;
+}
+.alarm-chip.is-on::before { content: "✓ "; }
+
+.btn-ics {
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent); font-weight: 600;
+}
+.btn-ics:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.btn-ics .ico { width: 19px; height: 19px; }
+
+/* avviso promemoria scaduti alla riapertura */
+.missed {
+  display: grid; gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: color-mix(in srgb, var(--svc-2) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--svc-2) 35%, transparent);
+  border-radius: var(--r);
+}
+.missed-head { display: flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 620; }
+.missed-head .ico { width: 17px; height: 17px; color: var(--svc-2); }
+.missed ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink-2); }
+.missed li { margin: 2px 0; }

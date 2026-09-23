@@ -1,8 +1,8 @@
 # Hub
 
 Sito personale in forma di app per telefono: all'apertura chiede un PIN, poi mostra
-un menu di servizi. Il primo servizio attivo è **Bilancio** (entrate e uscite); gli
-altri quattro sono segnaposto pronti da riempire.
+un menu di servizi. Sono attivi **Bilancio** (entrate e uscite) e **Calendario**
+(appuntamenti, compleanni, promemoria); gli altri tre sono segnaposto pronti da riempire.
 
 **Tutti i dati restano sul dispositivo.** Nessun server, nessun account, nessun
 database online: tutto vive nella memoria locale del browser.
@@ -62,8 +62,10 @@ Serve un repo **nuovo**, separato dagli altri progetti.
    README.md
    css/base.css
    css/bilancio.css
+   css/calendario.css
    js/shell.js
    js/bilancio.js
+   js/calendario.js
    icons/favicon.svg
    icons/icon-192.png
    icons/icon-512.png
@@ -108,9 +110,47 @@ in **CSV** per Excel.
 
 ---
 
+## Il servizio Calendario
+
+- **Mese**: griglia con un pallino colorato per ogni evento (blu appuntamenti, arancione
+  compleanni, verde promemoria). Tocca un giorno per vedere cosa c'è.
+- **Agenda**: cosa arriva nei prossimi 30 giorni / 3 mesi / anno, con filtri e ricerca.
+- **Opzioni**: esportazione, orario predefinito, backup.
+- Ogni evento può **ripetersi** ogni settimana, mese o anno. I compleanni impostati su
+  "ogni anno" mostrano da soli quanti anni compie la persona.
+- Ogni evento può avere **più sveglie**: all'ora, 15/30 minuti, 1/2 ore, 1/2 giorni,
+  1 settimana prima. Le scegli toccando le etichette, quante ne vuoi.
+
+### Come far suonare davvero le sveglie
+
+Questo è il punto importante, ed è bene essere chiari.
+
+**Un sito web non può far scattare un promemoria a telefono chiuso.** Non è un limite
+dell'app: su iPhone le notifiche programmate in locale non esistono per i siti web, e su
+Android il sistema spegne il processo dopo pochi minuti. Nessuna riga di codice aggira
+questa cosa.
+
+La via che funziona è passare l'evento al **calendario del telefono**:
+
+1. Apri l'evento nell'app.
+2. Premi **"Aggiungi al calendario del telefono"**: scarica un file `.ics`.
+3. Aprilo: iPhone e Android lo propongono al calendario di sistema, **con le sveglie già
+   dentro**.
+
+Da quel momento suona il calendario del telefono: affidabile, anche offline, anche a
+telefono bloccato. Da Opzioni puoi anche esportare tutti gli eventi in un colpo solo.
+
+Dentro l'app restano comunque due aiuti: gli **avvisi mentre l'app è aperta** (vanno
+attivati da Opzioni) e l'**elenco dei promemoria scaduti** che compare quando riapri.
+
+> Nota: sia le notifiche sia le sveglie del calendario rispettano la modalità silenziosa
+> del telefono. Nessuna app web può scavalcarla.
+
+---
+
 ## Aggiungere un servizio nuovo
 
-I segnaposto si chiamano `scelta2` … `scelta5`. Per attivarne uno servono due passi.
+I segnaposto rimasti si chiamano `scelta3`, `scelta4` e `scelta5`. Per attivarne uno servono due passi.
 
 **1. Rinominalo** in `js/shell.js`, nella lista `SERVIZI` (nome, descrizione, colore, icona).
 
@@ -134,7 +174,7 @@ I segnaposto si chiamano `scelta2` … `scelta5`. Per attivarne uno servono due 
     return { text: '3 attivi', tone: '' };   // tone: 'pos' | 'neg' | ''
   }
 
-  Hub.register({ id: 'scelta2', nome: 'Il mio servizio', mount: mount, unmount: unmount, stat: stat });
+  Hub.register({ id: 'scelta3', nome: 'Il mio servizio', mount: mount, unmount: unmount, stat: stat });
 })();
 ```
 
@@ -176,8 +216,10 @@ I grafici sono SVG generati a mano.
 | `index.html` | struttura del guscio e modello del servizio Bilancio |
 | `css/base.css` | token di colore, blocco PIN, home, primitive comuni |
 | `css/bilancio.css` | stili del tracker |
+| `css/calendario.css` | stili del calendario |
 | `js/shell.js` | PIN, navigazione, tema, registro dei servizi |
 | `js/bilancio.js` | dati, calcoli, grafici, backup del tracker |
+| `js/calendario.js` | eventi, ricorrenze, sveglie, generazione `.ics` |
 | `sw.js` | funzionamento offline |
 | `manifest.json` | dati per l'installazione come app |
 

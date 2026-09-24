@@ -890,6 +890,77 @@
     return 'Non ancora attive su questo dispositivo.';
   }
 
+
+  /* ─────────────────── elementi dettati al bot Telegram ───────────────────
+
+     Un server non puo' scrivere dentro la memoria del telefono: il bot mette
+     gli elementi in una coda, e qui li preleviamo e li salviamo in locale.
+     Dopo l'importazione confermiamo, cosi' il server li cancella.
+     ───────────────────────────────────────────────────────────────────── */
+
+  var codaInCorso = false;
+
+  function importaDaCoda(silenzioso) {
+    if (codaInCorso) return Promise.resolve(0);
+    codaInCorso = true;
+
+    return fetch(PUSH_URL + '/pending', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : { elementi: [] }; })
+      .then(function (j) {
+        var elementi = (j && Array.isArray(j.elementi)) ? j.elementi : [];
+        if (!elementi.length) return 0;
+
+        load();
+        var giaViste = {};
+        data.eventi.forEach(function (e) { if (e.origine) giaViste[e.origine] = 1; });
+
+        var presi = [], aggiunti = 0;
+        elementi.forEach(function (it) {
+          presi.push(it.id);
+          if (it.genere !== 'evento' || !it.payload) return;   // i movimenti arriveranno poi
+          if (giaViste[it.id]) return;                          // conferma persa: non duplicare
+
+          var pl = it.payload;
+          if (!TIPI[pl.tipo] || !/^\d{4}-\d{2}-\d{2}$/.test(pl.data || '')) return;
+
+          data.eventi.push({
+            id: uid(),
+            origine: it.id,
+            tipo: pl.tipo,
+            titolo: String(pl.titolo || 'Senza titolo').slice(0, 70),
+            data: pl.data,
+            ora: /^\d{2}:\d{2}$/.test(pl.ora || '') ? pl.ora : null,
+            durata: +pl.durata || 0,
+            ripeti: RIPETI[pl.ripeti] !== undefined ? pl.ripeti : 'nessuna',
+            sveglie: Array.isArray(pl.sveglie) ? pl.sveglie.filter(function (m) { return typeof m === 'number'; }) : [],
+            nota: String(pl.nota || '').slice(0, 120),
+            creato: +it.creato || Date.now()
+          });
+          aggiunti++;
+        });
+
+        if (aggiunti) save();
+
+        // confermiamo comunque tutti: quelli scartati non devono restare in coda
+        return fetch(PUSH_URL + '/ack', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ids: presi })
+        }).catch(function () {}).then(function () {
+          if (!aggiunti) return 0;
+          programmaTimer();
+          sincronizza(false);
+          if (root) renderAttuale();
+          if (Hub.refreshHome) Hub.refreshHome();
+          if (!silenzioso) {
+            Hub.toast(aggiunti === 1 ? 'Aggiunto 1 evento da Telegram' : 'Aggiunti ' + aggiunti + ' eventi da Telegram');
+          }
+          return aggiunti;
+        });
+      })
+      .catch(function () { return 0; })
+      .then(function (n) { codaInCorso = false; return n; });
+  }
+
   /* ─────────────────────────── viste ─────────────────────────── */
   function setView(n) {
     state.view = n;
@@ -976,6 +1047,7 @@
     renderScadute();
     programmaTimer();
     sincronizza(false);
+    importaDaCoda(false);
   }
 
   function unmount() {
@@ -1003,5 +1075,12 @@
   Hub.register({
     id: 'calendario', nome: 'Calendario',
     mount: mount, unmount: unmount, stat: stat
+  });
+
+  // All'avvio e a ogni ritorno sull'app controlliamo se il bot ha lasciato
+  // qualcosa: cosi' l'evento dettato in macchina compare da solo.
+  importaDaCoda(true);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) importaDaCoda(false);
   });
 })();

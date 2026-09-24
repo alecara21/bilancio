@@ -15,7 +15,7 @@
   // Numero di versione dell'app. Va alzato a ogni pubblicazione: compare in
   // fondo alla home e serve a capire al volo se un dispositivo e' rimasto
   // indietro (era successo con le notifiche: pulsanti nuovi, codice vecchio).
-  var VERSIONE = '1.4.0';
+  var VERSIONE = '1.5.0';
 
   var SALT = 'hub.v1.';
   var PIN_SHA = '046b66f3ad38c06c5d4a75068c4601e95c07b5a9adc04ed6a6ff8c9e4d762bd9';

@@ -827,6 +827,9 @@
       return fetch(PUSH_URL + percorso, {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(corpo)
       }).then(function (r) {
+        if (!r.ok) {
+          r.clone().json().then(function (j) { ultimoMotivo = (j && j.errore) || ''; }).catch(function () {});
+        }
         if (!r.ok && percorso === '/sync') {
           // il server non ci conosce piu': rifacciamo la registrazione
           return fetch(PUSH_URL + '/register', {
@@ -851,7 +854,9 @@
       Hub.toast('Attivazione in corso\u2026');
       return sincronizza(true).then(function (ok) {
         try { localStorage.setItem(PUSH_KEY, ok ? '1' : '0'); } catch (e) {}
-        Hub.toast(ok ? 'Notifiche attive su questo dispositivo' : 'Attivazione non riuscita: riprova');
+        Hub.toast(ok
+          ? 'Notifiche attive su questo dispositivo'
+          : 'Attivazione non riuscita' + (ultimoMotivo ? ': ' + ultimoMotivo : ': riprova'));
         if (root && state.view === 'opzioni') renderOpzioni();
       });
     });
@@ -899,6 +904,7 @@
      ───────────────────────────────────────────────────────────────────── */
 
   var codaInCorso = false;
+  var ultimoMotivo = '';   // spiegazione arrivata dal server, da mostrare all'utente
 
   function importaDaCoda(silenzioso) {
     if (codaInCorso) return Promise.resolve(0);

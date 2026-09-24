@@ -5,7 +5,7 @@
    Nessun dato personale passa di qui: i movimenti vivono in localStorage,
    che il service worker non vede e non tocca. */
 
-var CACHE = 'hub-v6';
+var CACHE = 'hub-v7';
 var ASSETS = [
   './',
   './index.html',

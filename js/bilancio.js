@@ -30,10 +30,12 @@
       entrata: (c && Array.isArray(c.entrata) && c.entrata.length) ? c.entrata : DEFAULT_CATS.entrata.slice(),
       uscita: (c && Array.isArray(c.uscita) && c.uscita.length) ? c.uscita : DEFAULT_CATS.uscita.slice()
     };
-    data.movimenti = data.movimenti.filter(function (m) {
-      return m && typeof m.id === 'string' && (m.tipo === 'entrata' || m.tipo === 'uscita') &&
-        typeof m.importo === 'number' && isFinite(m.importo) && /^\d{4}-\d{2}-\d{2}$/.test(m.data);
-    });
+    data.movimenti = data.movimenti.filter(movimentoValido);
+  }
+
+  function movimentoValido(m) {
+    return !!m && typeof m.id === 'string' && (m.tipo === 'entrata' || m.tipo === 'uscita') &&
+      typeof m.importo === 'number' && isFinite(m.importo) && /^\d{4}-\d{2}-\d{2}$/.test(m.data);
   }
 
   function save() {
@@ -502,6 +504,14 @@
 
   /* ─────────────────────────── opzioni ─────────────────────────── */
   function renderSettings() {
+    el('nuvolaStato').textContent = statoNuvola();
+    var collegata = nuvolaCollegata();
+    root.querySelector('[data-act="nuvolaEntra"]').hidden = collegata;
+    root.querySelector('[data-act="nuvolaEsci"]').hidden = !collegata;
+    el('nuvolaDettaglio').textContent = collegata
+      ? 'Va fatto su ogni dispositivo: accedi con lo stesso account e i dati compaiono da soli.'
+      : '';
+
     renderChips('catsIn', 'entrata');
     renderChips('catsOut', 'uscita');
     var bytes = 0;
@@ -524,6 +534,7 @@
         data.categorie[kind] = data.categorie[kind].filter(function (c) { return c !== n; });
         if (!data.categorie[kind].length) data.categorie[kind] = ['Altro'];
         save();
+        nuvolaCategorie();
         renderSettings();
       });
     });
@@ -606,10 +617,12 @@
       var m = data.movimenti.filter(function (x) { return x.id === state.editing; })[0];
       if (m) { m.tipo = p.tipo; m.importo = p.importo; m.data = p.data; m.categoria = p.categoria; m.nota = p.nota; }
       if (save()) Hub.toast('Movimento aggiornato');
+      if (m) nuvolaScrivi(m);
     } else {
       p.id = uid(); p.creato = Date.now();
       data.movimenti.push(p);
       if (save()) Hub.toast((p.tipo === 'entrata' ? 'Entrata' : 'Uscita') + ' di ' + eur(amount) + ' registrata');
+      nuvolaScrivi(p);
     }
 
     state.month = monthKey(date);
@@ -621,6 +634,7 @@
   function deleteTx() {
     if (!state.editing) return;
     if (!confirm('Eliminare definitivamente questo movimento?')) return;
+    nuvolaElimina(state.editing);
     data.movimenti = data.movimenti.filter(function (m) { return m.id !== state.editing; });
     save(); closeSheet(); refreshCatFilter(); renderCurrent();
     Hub.toast('Movimento eliminato');
@@ -708,7 +722,9 @@
         });
       }
 
-      save(); refreshCatFilter(); renderCurrent();
+      save();
+      if (nuvolaCollegata()) Nuvola.scriviMolti('movimenti', data.movimenti);
+      refreshCatFilter(); renderCurrent();
       Hub.toast(added + (added === 1 ? ' movimento importato' : ' movimenti importati'));
     };
     reader.onerror = function () { Hub.toast('Non riesco a leggere il file.'); };
@@ -718,9 +734,13 @@
   function wipe() {
     if (!confirm('Cancellare TUTTI i movimenti?\n\nL’operazione non è reversibile. Se non hai un backup, annulla ed esportalo prima.')) return;
     if (!confirm('Confermi definitivamente? Tutti i dati verranno persi.')) return;
+    var daCancellare = data.movimenti.map(function (m) { return m.id; });
     data.movimenti = [];
     data.categorie = { entrata: DEFAULT_CATS.entrata.slice(), uscita: DEFAULT_CATS.uscita.slice() };
-    save(); refreshCatFilter(); renderCurrent();
+    save();
+    daCancellare.forEach(nuvolaElimina);
+    nuvolaCategorie();
+    refreshCatFilter(); renderCurrent();
     Hub.toast('Tutti i dati sono stati cancellati');
   }
 
@@ -745,8 +765,107 @@
       })(mk, back);
     }
     data.movimenti = demo;
-    save(); refreshCatFilter(); renderCurrent();
+    save();
+    if (nuvolaCollegata()) Nuvola.scriviMolti('movimenti', demo);
+    refreshCatFilter(); renderCurrent();
     Hub.toast('Dati di esempio caricati — cancellali dalle Opzioni');
+  }
+
+
+  /* ─────────────────────── sincronizzazione con la nuvola ───────────────────────
+
+     localStorage resta la copia di lavoro (serve offline e per il primo
+     disegno), ma quando l'accesso e' attivo la verita' e' il database.
+     E' il motivo per cui esiste: una memoria che il browser non puo'
+     cancellare di sua iniziativa.
+     ─────────────────────────────────────────────────────────────────────── */
+
+  var disiscrivi = [];
+
+  function nuvolaCollegata() {
+    return !!(window.Nuvola && Nuvola.stato() === 'connessa');
+  }
+
+  function chiaveMigrazione() {
+    var u = window.Nuvola && Nuvola.utente();
+    return 'hub.bilancioMigrato.' + (u ? u.uid : 'anonimo');
+  }
+
+  function giaMigrato() {
+    try { return localStorage.getItem(chiaveMigrazione()) === '1'; } catch (e) { return false; }
+  }
+  function segnaMigrato() {
+    try { localStorage.setItem(chiaveMigrazione(), '1'); } catch (e) {}
+  }
+
+  function senzaId(m) {
+    var copia = {};
+    Object.keys(m).forEach(function (k) { if (k !== 'id') copia[k] = m[k]; });
+    return copia;
+  }
+
+  function fermaSincronizzazione() {
+    disiscrivi.forEach(function (f) { try { f(); } catch (e) {} });
+    disiscrivi = [];
+  }
+
+  function avviaSincronizzazione() {
+    fermaSincronizzazione();
+    if (!nuvolaCollegata()) return;
+
+    disiscrivi.push(Nuvola.ascoltaCollezione('movimenti', function (daNuvola) {
+      var validi = daNuvola.filter(movimentoValido);
+
+      // Prima connessione con dati solo locali: vanno CARICATI, non sostituiti.
+      // Se qui adottassimo il vuoto della nuvola, cancelleremmo tutto —
+      // esattamente l'incidente che questo database deve impedire.
+      if (!validi.length && data.movimenti.length && !giaMigrato()) {
+        Nuvola.scriviMolti('movimenti', data.movimenti).then(function (n) {
+          segnaMigrato();
+          if (n) Hub.toast(n + (n === 1 ? ' movimento messo al sicuro' : ' movimenti messi al sicuro'));
+        });
+        return;
+      }
+
+      segnaMigrato();
+      data.movimenti = validi;
+      save();
+      refreshCatFilter();
+      if (root) renderCurrent();
+      if (Hub.refreshHome) Hub.refreshHome();
+    }));
+
+    disiscrivi.push(Nuvola.ascoltaDocumento('meta', 'bilancio', function (d) {
+      if (!d || !d.categorie) return;
+      if (Array.isArray(d.categorie.entrata) && d.categorie.entrata.length) data.categorie.entrata = d.categorie.entrata;
+      if (Array.isArray(d.categorie.uscita) && d.categorie.uscita.length) data.categorie.uscita = d.categorie.uscita;
+      save();
+      if (root && state.view === 'impostazioni') renderSettings();
+    }));
+  }
+
+  // Ogni modifica locale viene riflessa nel database, se collegato.
+  function nuvolaScrivi(m) {
+    if (nuvolaCollegata()) Nuvola.scriviDocumento('movimenti', m.id, senzaId(m));
+  }
+  function nuvolaElimina(id) {
+    if (nuvolaCollegata()) Nuvola.eliminaDocumento('movimenti', id);
+  }
+  function nuvolaCategorie() {
+    if (nuvolaCollegata()) Nuvola.scriviMeta('meta', 'bilancio', { categorie: data.categorie, aggiornato: Date.now() });
+  }
+
+  function statoNuvola() {
+    if (!window.Nuvola) return 'Sincronizzazione non disponibile su questo dispositivo.';
+    var st = Nuvola.stato();
+    if (st === 'non disponibile') return 'Libreria non caricata: ricarica la pagina.';
+    if (st === 'connessa') {
+      var u = Nuvola.utente();
+      return 'Attiva come ' + (u && u.email ? u.email : 'utente collegato') +
+        '. I movimenti sono al sicuro nel database e allineati fra i dispositivi.';
+    }
+    if (st === 'spenta') return 'Non attiva: i dati stanno solo su questo dispositivo.';
+    return 'Accesso non effettuato su questo dispositivo.';
   }
 
   /* ─────────────────────────── viste ─────────────────────────── */
@@ -830,6 +949,18 @@
     });
     root.querySelector('[data-act="wipe"]').addEventListener('click', wipe);
 
+    root.querySelector('[data-act="nuvolaEntra"]').addEventListener('click', function () {
+      if (!window.Nuvola) { Hub.toast('Sincronizzazione non disponibile.'); return; }
+      Hub.toast('Apro l\u2019accesso Google\u2026');
+      Nuvola.accedi().catch(function (e) {
+        Hub.toast('Accesso non riuscito' + (e && e.code ? ' (' + e.code + ')' : ''));
+      });
+    });
+    root.querySelector('[data-act="nuvolaEsci"]').addEventListener('click', function () {
+      if (!confirm('Disconnettere questo dispositivo?\n\nI movimenti restano nel database e nella copia locale, ma smettono di allinearsi.')) return;
+      Nuvola.esci().then(function () { renderCurrent(); });
+    });
+
     all('.add-cat').forEach(function (f) {
       f.addEventListener('submit', function (ev) {
         ev.preventDefault();
@@ -840,7 +971,7 @@
           Hub.toast('Categoria già presente'); return;
         }
         data.categorie[kind].push(name);
-        save(); input.value = ''; renderSettings();
+        save(); nuvolaCategorie(); input.value = ''; renderSettings();
       });
     });
 
@@ -863,9 +994,11 @@
     on(document.getElementById('svcBody'), 'scroll', hideTip, { passive: true });
 
     setView('riepilogo');
+    avviaSincronizzazione();
   }
 
   function unmount() {
+    fermaSincronizzazione();
     listeners.forEach(function (l) { l[0].removeEventListener(l[1], l[2], l[3]); });
     listeners = [];
     closeSheet();
@@ -878,6 +1011,16 @@
     var t = totals(ofMonth(thisMonth()));
     if (t.n === 0) return { text: 'Nessun movimento', tone: '' };
     return { text: signed(t.saldo), tone: t.saldo >= 0 ? 'pos' : 'neg' };
+  }
+
+  // Quando l'accesso cambia (anche al ritorno da un reindirizzamento su
+  // iPhone) riallacciamo l'ascolto e aggiorniamo quel che si vede.
+  if (window.Nuvola) {
+    Nuvola.osserva(function () {
+      avviaSincronizzazione();
+      if (root) renderCurrent();
+      if (Hub.refreshHome) Hub.refreshHome();
+    });
   }
 
   Hub.register({

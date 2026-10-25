@@ -236,11 +236,25 @@
     <!-- OPZIONI -->
     <section data-view-panel="impostazioni" class="view" hidden>
       <div class="card">
+        <h4 class="card-title">Sincronizzazione</h4>
+        <p class="card-note" data-el="nuvolaStato">—</p>
+        <div class="btn-row">
+          <button class="btn btn-primary" data-act="nuvolaEntra" type="button">Accedi con Google</button>
+          <button class="btn" data-act="nuvolaEsci" type="button" hidden>Disconnetti</button>
+        </div>
+        <p class="card-note">
+          Con l'accesso attivo i movimenti vivono in un database protetto dal tuo account Google,
+          e PC e telefono restano allineati da soli. <strong>Senza accesso i dati stanno solo qui</strong>,
+          e il browser può cancellarli senza avvisare — è quello che è già successo.
+        </p>
+        <p class="card-note" data-el="nuvolaDettaglio"></p>
+      </div>
+
+      <div class="card">
         <h4 class="card-title">Backup dei dati</h4>
         <p class="card-note">
-          I movimenti sono salvati solo nel browser di questo dispositivo. Non vengono inviati da nessuna parte,
-          ma <strong>si perdono se cancelli i dati del browser</strong>. Esporta un backup ogni tanto e usalo
-          anche per spostare i dati tra PC e telefono.
+          Il backup resta utile anche con la sincronizzazione attiva: è una copia che tieni tu,
+          indipendente da Google e da questo dispositivo.
         </p>
         <div class="btn-row">
           <button class="btn btn-primary" data-act="export" type="button">Esporta backup (.json)</button>
@@ -580,6 +594,12 @@
 
 <div id="tip" class="tip" hidden></div>
 <div id="toast" class="toast" hidden></div>
+
+<!-- Firebase ospitato nel sito, non da un CDN: cosi' la modalita' offline regge -->
+<script src="js/vendor/firebase-app-compat.js"></script>
+<script src="js/vendor/firebase-auth-compat.js"></script>
+<script src="js/vendor/firebase-firestore-compat.js"></script>
+<script src="js/nuvola.js"></script>
 
 <script src="js/shell.js"></script>
 <script src="js/bilancio.js"></script>

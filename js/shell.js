@@ -15,7 +15,7 @@
   // Numero di versione dell'app. Va alzato a ogni pubblicazione: compare in
   // fondo alla home e serve a capire al volo se un dispositivo e' rimasto
   // indietro (era successo con le notifiche: pulsanti nuovi, codice vecchio).
-  var VERSIONE = '2.0.0';
+  var VERSIONE = '2.1.0';
 
   var SALT = 'hub.v1.';
   var PIN_SHA = '046b66f3ad38c06c5d4a75068c4601e95c07b5a9adc04ed6a6ff8c9e4d762bd9';
@@ -60,8 +60,8 @@
       icona: '<rect x="3" y="5" width="18" height="16" rx="2.8" fill="none" stroke-width="1.9"/><path d="M8 2.5v5M16 2.5v5M3 10.5h18" fill="none" stroke-width="1.9" stroke-linecap="round"/>'
     },
     {
-      id: 'scelta3', nome: 'Scelta 3', desc: 'Da definire', tint: 'var(--svc-3)',
-      icona: '<path d="M4 6.5h16M4 12h16M4 17.5h10" fill="none" stroke-width="2.1" stroke-linecap="round"/>'
+      id: 'task', nome: 'Task', desc: 'Cose da fare', tint: 'var(--svc-3)',
+      icona: '<path d="M4.5 7.5 6.5 9.5 10 6" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 16.5 6.5 18.5 10 15" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 8h7M13 17h7" fill="none" stroke-width="2" stroke-linecap="round"/>'
     },
     {
       id: 'scelta4', nome: 'Scelta 4', desc: 'Da definire', tint: 'var(--svc-4)',

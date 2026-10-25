@@ -617,10 +617,12 @@
       var ev = data.eventi.filter(function (x) { return x.id === state.editing; })[0];
       if (ev) { Object.keys(p).forEach(function (k) { ev[k] = p[k]; }); }
       if (save()) Hub.toast('Evento aggiornato');
+      if (ev) nuvolaScrivi(ev);
     } else {
       p.id = uid(); p.creato = Date.now();
       data.eventi.push(p);
       if (save()) Hub.toast('Evento salvato');
+      nuvolaScrivi(p);
     }
 
     // Per un evento ricorrente la data base può essere lontana nel passato
@@ -638,6 +640,7 @@
   function elimina() {
     if (!state.editing) return;
     if (!confirm('Eliminare definitivamente questo evento?')) return;
+    nuvolaElimina(state.editing);
     data.eventi = data.eventi.filter(function (e) { return e.id !== state.editing; });
     save(); chiudiSheet(); programmaTimer(); sincronizza(false); renderAttuale(); Hub.refreshHome();
     Hub.toast('Evento eliminato');
@@ -695,7 +698,9 @@
       });
       if (p.pref && /^\d{2}:\d{2}$/.test(p.pref.defTime)) data.pref.defTime = p.pref.defTime;
 
-      save(); programmaTimer(); sincronizza(false); renderAttuale(); Hub.refreshHome();
+      save();
+      if (nuvolaCollegata()) Nuvola.scriviMolti('eventi', data.eventi);
+      programmaTimer(); sincronizza(false); renderAttuale(); Hub.refreshHome();
       Hub.toast(agg + (agg === 1 ? ' evento importato' : ' eventi importati'));
     };
     r.onerror = function () { Hub.toast('Non riesco a leggere il file.'); };
@@ -705,12 +710,20 @@
   function svuota() {
     if (!confirm('Cancellare TUTTI gli eventi?\n\nL\u2019operazione non è reversibile. Se non hai un backup, annulla ed esportalo prima.')) return;
     if (!confirm('Confermi definitivamente?')) return;
+    var daCancellare = data.eventi.map(function (e) { return e.id; });
     data.eventi = [];
-    save(); programmaTimer(); sincronizza(false); renderAttuale(); Hub.refreshHome();
+    save();
+    daCancellare.forEach(nuvolaElimina);
+    programmaTimer(); sincronizza(false); renderAttuale(); Hub.refreshHome();
     Hub.toast('Tutti gli eventi sono stati cancellati');
   }
 
   function renderOpzioni() {
+    el('nuvolaStato').textContent = statoNuvola();
+    var collegata = nuvolaCollegata();
+    root.querySelector('[data-act="nuvolaEntra"]').hidden = collegata;
+    root.querySelector('[data-act="nuvolaEsci"]').hidden = !collegata;
+
     el('pushState').textContent = statoPush();
     el('notifState').textContent = statoNotifiche();
     el('defTime').value = data.pref.defTime;
@@ -945,7 +958,10 @@
           aggiunti++;
         });
 
-        if (aggiunti) save();
+        if (aggiunti) {
+          save();
+          if (nuvolaCollegata()) Nuvola.scriviMolti('eventi', data.eventi);
+        }
 
         // confermiamo comunque tutti: quelli scartati non devono restare in coda
         return fetch(PUSH_URL + '/ack', {
@@ -965,6 +981,96 @@
       })
       .catch(function () { return 0; })
       .then(function (n) { codaInCorso = false; return n; });
+  }
+
+
+  /* ─────────────────────── sincronizzazione con la nuvola ───────────────────────
+     Stesso schema del Bilancio: la copia locale serve offline e per il primo
+     disegno, ma quando l'accesso e' attivo la verita' e' il database.
+     ─────────────────────────────────────────────────────────────────────── */
+
+  var disiscrivi = [];
+
+  function nuvolaCollegata() {
+    return !!(window.Nuvola && Nuvola.stato() === 'connessa');
+  }
+
+  function chiaveMigrazione() {
+    var u = window.Nuvola && Nuvola.utente();
+    return 'hub.calendarioMigrato.' + (u ? u.uid : 'anonimo');
+  }
+  function giaMigrato() {
+    try { return localStorage.getItem(chiaveMigrazione()) === '1'; } catch (e) { return false; }
+  }
+  function segnaMigrato() {
+    try { localStorage.setItem(chiaveMigrazione(), '1'); } catch (e) {}
+  }
+
+  function senzaId(ev) {
+    var copia = {};
+    Object.keys(ev).forEach(function (k) { if (k !== 'id') copia[k] = ev[k]; });
+    return copia;
+  }
+
+  function fermaSincronizzazione() {
+    disiscrivi.forEach(function (f) { try { f(); } catch (e) {} });
+    disiscrivi = [];
+  }
+
+  function avviaSincronizzazione() {
+    fermaSincronizzazione();
+    if (!nuvolaCollegata()) return;
+
+    disiscrivi.push(Nuvola.ascoltaCollezione('eventi', function (daNuvola) {
+      var validi = daNuvola.filter(valido);
+
+      // Prima connessione con eventi solo locali: si caricano, non si sostituiscono.
+      if (!validi.length && data.eventi.length && !giaMigrato()) {
+        Nuvola.scriviMolti('eventi', data.eventi).then(function (n) {
+          segnaMigrato();
+          if (n) Hub.toast(n + (n === 1 ? ' evento messo al sicuro' : ' eventi messi al sicuro'));
+        });
+        return;
+      }
+
+      segnaMigrato();
+      data.eventi = validi;
+      save();
+      programmaTimer();
+      sincronizza(false);
+      if (root) renderAttuale();
+      if (Hub.refreshHome) Hub.refreshHome();
+    }));
+
+    disiscrivi.push(Nuvola.ascoltaDocumento('meta', 'calendario', function (d) {
+      if (!d || !/^\d{2}:\d{2}$/.test(d.defTime || '')) return;
+      data.pref.defTime = d.defTime;
+      save();
+      if (root && state.view === 'opzioni') renderOpzioni();
+    }));
+  }
+
+  function nuvolaScrivi(ev) {
+    if (nuvolaCollegata()) Nuvola.scriviDocumento('eventi', ev.id, senzaId(ev));
+  }
+  function nuvolaElimina(id) {
+    if (nuvolaCollegata()) Nuvola.eliminaDocumento('eventi', id);
+  }
+  function nuvolaPref() {
+    if (nuvolaCollegata()) Nuvola.scriviMeta('meta', 'calendario', { defTime: data.pref.defTime, aggiornato: Date.now() });
+  }
+
+  function statoNuvola() {
+    if (!window.Nuvola) return 'Sincronizzazione non disponibile su questo dispositivo.';
+    var st = Nuvola.stato();
+    if (st === 'non disponibile') return 'Libreria non caricata: ricarica la pagina.';
+    if (st === 'connessa') {
+      var u = Nuvola.utente();
+      return 'Attiva come ' + (u && u.email ? u.email : 'utente collegato') +
+        '. Gli eventi sono nel database e allineati fra i dispositivi.';
+    }
+    if (st === 'spenta') return 'Non attiva: gli eventi stanno solo su questo dispositivo.';
+    return 'Accesso non effettuato su questo dispositivo.';
   }
 
   /* ─────────────────────────── viste ─────────────────────────── */
@@ -1033,8 +1139,20 @@
       this.value = '';
     });
     root.querySelector('[data-act="wipe"]').addEventListener('click', svuota);
+
+    root.querySelector('[data-act="nuvolaEntra"]').addEventListener('click', function () {
+      if (!window.Nuvola) { Hub.toast('Sincronizzazione non disponibile.'); return; }
+      Hub.toast('Apro l\u2019accesso Google\u2026');
+      Nuvola.accedi().catch(function (e) {
+        Hub.toast('Accesso non riuscito' + (e && e.code ? ' (' + e.code + ')' : ''));
+      });
+    });
+    root.querySelector('[data-act="nuvolaEsci"]').addEventListener('click', function () {
+      if (!confirm('Disconnettere questo dispositivo?\n\nGli eventi restano nel database e nella copia locale, ma smettono di allinearsi.')) return;
+      Nuvola.esci().then(function () { renderAttuale(); });
+    });
     el('defTime').addEventListener('change', function () {
-      if (/^\d{2}:\d{2}$/.test(this.value)) { data.pref.defTime = this.value; save(); programmaTimer(); }
+      if (/^\d{2}:\d{2}$/.test(this.value)) { data.pref.defTime = this.value; save(); nuvolaPref(); programmaTimer(); }
     });
 
     // modulo evento (vive nel body)
@@ -1054,9 +1172,11 @@
     programmaTimer();
     sincronizza(false);
     importaDaCoda(false);
+    avviaSincronizzazione();
   }
 
   function unmount() {
+    fermaSincronizzazione();
     listeners.forEach(function (l) { l[0].removeEventListener(l[1], l[2], l[3]); });
     listeners = [];
     timers.forEach(clearTimeout);
@@ -1082,6 +1202,14 @@
     id: 'calendario', nome: 'Calendario',
     mount: mount, unmount: unmount, stat: stat
   });
+
+  if (window.Nuvola) {
+    Nuvola.osserva(function () {
+      avviaSincronizzazione();
+      if (root) renderAttuale();
+      if (Hub.refreshHome) Hub.refreshHome();
+    });
+  }
 
   // All'avvio e a ogni ritorno sull'app controlliamo se il bot ha lasciato
   // qualcosa: cosi' l'evento dettato in macchina compare da solo.

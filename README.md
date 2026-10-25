@@ -1,11 +1,15 @@
 # Hub
 
 Sito personale in forma di app per telefono: all'apertura chiede un PIN, poi mostra
-un menu di servizi. Sono attivi **Bilancio** (entrate e uscite) e **Calendario**
-(appuntamenti, compleanni, promemoria); gli altri tre sono segnaposto pronti da riempire.
+un menu di servizi. Attivi: **Bilancio** (entrate e uscite), **Calendario**
+(appuntamenti e promemoria, con bot Telegram) e **Task** (cose da fare).
 
-**Tutti i dati restano sul dispositivo.** Nessun server, nessun account, nessun
-database online: tutto vive nella memoria locale del browser.
+**I dati stanno in un database protetto dal tuo account Google** (Firebase/Firestore,
+progetto `alecara`, regione europea). La memoria del browser resta come copia di lavoro,
+così l'app funziona anche offline.
+
+> Prima i dati vivevano **solo** nel browser. Safari cancella la memoria dei siti dopo
+> 7 giorni di inattività e i movimenti sono spariti davvero: da lì la scelta del database.
 
 ---
 
@@ -152,9 +156,47 @@ scaduti** che compare quando riapri.
 
 ---
 
+## Il servizio Task
+
+Cose da fare, classificate su **due assi**: quanto contano e quanto costano.
+
+- **Importanza** → il colore, su una scala che va dal chiaro allo scuro
+- **Impegno** → tre barrette, senza colore
+
+Sono due canali diversi di proposito. Metterli entrambi sul colore rende l'elenco
+illeggibile; e il classico rosso/giallo/verde è stato scartato dopo il controllo,
+perché sotto daltonismo (protanopia) verde e giallo distano ΔE 1.7 — cioè sono lo
+stesso colore. Una scala di luminosità si legge invece con qualunque vista, e
+l'etichetta scritta accompagna sempre il colore.
+
+L'ordinamento predefinito, **Priorità**, mette in cima le cose importanti che costano
+poco: quelle che conviene togliere di mezzo per prime.
+
+Ci sono anche filtri, ricerca, scadenze (con evidenza per quelle scadute) e un archivio
+delle completate.
+
+---
+
+## Sincronizzazione
+
+Ogni servizio ha, in **Opzioni → Sincronizzazione**, l'accesso con Google. Va fatto su
+ogni dispositivo: dopo, PC e telefono restano allineati da soli.
+
+Le regole di sicurezza del database chiudono tutto a chi non è autenticato e isolano
+ogni utente nel proprio ramo `utenti/<identificativo>/…`. Verificato: lettura e
+scrittura anonime rispondono `permission-denied`.
+
+Alla prima connessione i dati già presenti sul dispositivo vengono **caricati**, non
+sostituiti con un database vuoto. È la protezione contro il ripetersi dell'incidente:
+se l'app adottasse il vuoto come verità, cancellerebbe tutto.
+
+L'esportazione del backup resta utile: è una copia che tieni tu, indipendente da Google.
+
+---
+
 ## Aggiungere un servizio nuovo
 
-I segnaposto rimasti si chiamano `scelta3`, `scelta4` e `scelta5`. Per attivarne uno servono due passi.
+I segnaposto rimasti si chiamano `scelta4` e `scelta5`. Per attivarne uno servono due passi.
 
 **1. Rinominalo** in `js/shell.js`, nella lista `SERVIZI` (nome, descrizione, colore, icona).
 
@@ -224,6 +266,8 @@ I grafici sono SVG generati a mano.
 | `js/shell.js` | PIN, navigazione, tema, registro dei servizi |
 | `js/bilancio.js` | dati, calcoli, grafici, backup del tracker |
 | `js/calendario.js` | eventi, ricorrenze, sveglie, `.ics`, iscrizione push |
+| `js/task.js` | cose da fare, importanza e impegno |
+| `js/nuvola.js` | accesso Google e sincronizzazione Firestore |
 | `sw.js` | funzionamento offline e ricezione delle notifiche |
 | `manifest.json` | dati per l'installazione come app |
 

@@ -5,13 +5,14 @@
    Nessun dato personale passa di qui: i movimenti vivono in localStorage,
    che il service worker non vede e non tocca. */
 
-var CACHE = 'hub-v8';
+var CACHE = 'hub-v9';
 var ASSETS = [
   './',
   './index.html',
   './css/base.css',
   './css/bilancio.css',
   './css/calendario.css',
+  './css/task.css',
   './js/vendor/firebase-app-compat.js',
   './js/vendor/firebase-auth-compat.js',
   './js/vendor/firebase-firestore-compat.js',
@@ -19,6 +20,7 @@ var ASSETS = [
   './js/shell.js',
   './js/bilancio.js',
   './js/calendario.js',
+  './js/task.js',
   './manifest.json',
   './icons/favicon.svg',
   './icons/icon-192.png',

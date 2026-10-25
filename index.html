@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/bilancio.css">
 <link rel="stylesheet" href="css/calendario.css">
+<link rel="stylesheet" href="css/task.css">
 </head>
 <body>
 
@@ -421,8 +422,21 @@
       </div>
 
       <div class="card">
+        <h4 class="card-title">Sincronizzazione</h4>
+        <p class="card-note" data-el="nuvolaStato">—</p>
+        <div class="btn-row">
+          <button class="btn btn-primary" data-act="nuvolaEntra" type="button">Accedi con Google</button>
+          <button class="btn" data-act="nuvolaEsci" type="button" hidden>Disconnetti</button>
+        </div>
+        <p class="card-note">
+          Stesso account del Bilancio: gli eventi vivono nel database e PC e telefono
+          restano allineati da soli.
+        </p>
+      </div>
+
+      <div class="card">
         <h4 class="card-title">Backup dei dati</h4>
-        <p class="card-note">Gli eventi sono salvati solo su questo dispositivo. Esporta un backup per non perderli e per spostarli tra PC e telefono.</p>
+        <p class="card-note">Una copia che tieni tu, indipendente dal database e da questo dispositivo.</p>
         <div class="btn-row">
           <button class="btn btn-primary" data-act="export" type="button">Esporta backup (.json)</button>
           <button class="btn" data-act="import" type="button">Importa backup</button>
@@ -542,6 +556,155 @@
   </form>
 </dialog>
 
+<!-- ══════════════════════════════ MODELLO: TASK ══════════════════════════════ -->
+<template id="tpl-task">
+  <div class="task">
+    <div class="segtabs" role="tablist" aria-label="Sezioni delle task">
+      <button class="segtab is-active" role="tab" aria-selected="true" data-view="dafare">Da fare</button>
+      <button class="segtab" role="tab" aria-selected="false" data-view="fatte">Fatte</button>
+      <button class="segtab" role="tab" aria-selected="false" data-view="opzioni">Opzioni</button>
+    </div>
+
+    <!-- DA FARE -->
+    <section data-view-panel="dafare" class="view">
+      <div class="task-sommario" data-el="sommario"></div>
+
+      <div class="card filters">
+        <div class="filter-row">
+          <label class="field">
+            <span class="field-label">Ordina per</span>
+            <select data-el="fOrdine">
+              <option value="priorita">Priorità (importanti e veloci)</option>
+              <option value="importanza">Importanza</option>
+              <option value="impegno">Impegno, dal più leggero</option>
+              <option value="scadenza">Scadenza</option>
+              <option value="recenti">Aggiunte di recente</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">Importanza</span>
+            <select data-el="fImportanza">
+              <option value="0">Tutte</option>
+              <option value="3">Solo alta</option>
+              <option value="2">Media o più</option>
+            </select>
+          </label>
+          <label class="field field-grow">
+            <span class="field-label">Cerca</span>
+            <input data-el="fCerca" type="search" placeholder="titolo o nota…" autocomplete="off">
+          </label>
+        </div>
+      </div>
+
+      <div class="card"><div data-el="elencoAperte" class="task-list"></div></div>
+    </section>
+
+    <!-- FATTE -->
+    <section data-view-panel="fatte" class="view" hidden>
+      <div class="card">
+        <div class="card-head">
+          <h4 class="card-title">Completate</h4>
+          <button class="btn-ghost" data-act="svuotaFatte" type="button">Elimina tutte</button>
+        </div>
+        <div data-el="elencoFatte" class="task-list"></div>
+      </div>
+    </section>
+
+    <!-- OPZIONI -->
+    <section data-view-panel="opzioni" class="view" hidden>
+      <div class="card">
+        <h4 class="card-title">Sincronizzazione</h4>
+        <p class="card-note" data-el="nuvolaStato">—</p>
+        <div class="btn-row">
+          <button class="btn btn-primary" data-act="nuvolaEntra" type="button">Accedi con Google</button>
+          <button class="btn" data-act="nuvolaEsci" type="button" hidden>Disconnetti</button>
+        </div>
+        <p class="card-note">Stesso account degli altri servizi.</p>
+      </div>
+
+      <div class="card">
+        <h4 class="card-title">Come sono codificate</h4>
+        <p class="card-note">
+          L'<strong>importanza</strong> è il colore, su una scala che va dal chiaro allo scuro.
+          L'<strong>impegno</strong> sono le tre barrette, senza colore.
+        </p>
+        <p class="card-note">
+          Due informazioni diverse su due canali diversi: così restano leggibili insieme, e
+          anche da chi non distingue bene i colori. Il classico rosso/giallo/verde è stato
+          scartato perché sotto daltonismo il verde e il giallo risultano identici.
+        </p>
+      </div>
+
+      <div class="card">
+        <h4 class="card-title">Backup dei dati</h4>
+        <div class="btn-row">
+          <button class="btn btn-primary" data-act="export" type="button">Esporta backup (.json)</button>
+          <button class="btn" data-act="import" type="button">Importa backup</button>
+          <input type="file" data-el="importFile" accept="application/json,.json" hidden>
+        </div>
+        <p class="card-note" data-el="storageInfo"></p>
+      </div>
+
+      <div class="card card-danger">
+        <h4 class="card-title">Zona pericolosa</h4>
+        <p class="card-note">Cancella definitivamente tutte le task, comprese quelle completate.</p>
+        <button class="btn btn-danger" data-act="wipe" type="button">Cancella tutto</button>
+      </div>
+    </section>
+
+    <button class="fab" data-act="add" type="button" aria-label="Aggiungi task">
+      <svg viewBox="0 0 24 24" class="ico"><path d="M12 5v14M5 12h14" fill="none" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <span class="fab-text">Aggiungi</span>
+    </button>
+  </div>
+</template>
+
+<!-- Modulo task -->
+<dialog id="tkSheet" class="sheet">
+  <form id="tkForm">
+    <div class="sheet-head">
+      <h3 id="tkTitolo">Nuova task</h3>
+      <button type="button" class="icon-btn" id="tkClose" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <label class="field">
+      <span class="field-label">Cosa devi fare</span>
+      <input id="tkNome" type="text" maxlength="90" placeholder="es. preparare il preventivo" required autocomplete="off">
+    </label>
+
+    <div class="field">
+      <span class="field-label">Importanza</span>
+      <div class="scala" id="tkImportanza"></div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">Impegno richiesto</span>
+      <div class="scala" id="tkImpegno"></div>
+    </div>
+
+    <label class="field">
+      <span class="field-label">Scadenza <span class="opt">(facoltativa)</span></span>
+      <input id="tkScadenza" type="date">
+    </label>
+
+    <label class="field">
+      <span class="field-label">Nota <span class="opt">(facoltativa)</span></span>
+      <input id="tkNota" type="text" maxlength="140" placeholder="dettagli, link, riferimenti…" autocomplete="off">
+    </label>
+
+    <p class="form-error" id="tkErrore" hidden></p>
+
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-danger-ghost" id="tkElimina" hidden>Elimina</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="tkAnnulla">Annulla</button>
+      <button type="submit" class="btn btn-primary" id="tkSalva">Salva</button>
+    </div>
+  </form>
+</dialog>
+
 <!-- Modulo di inserimento: fuori dagli screen, così il top layer resta pulito -->
 <dialog id="sheet" class="sheet">
   <form id="txForm">
@@ -604,5 +767,6 @@
 <script src="js/shell.js"></script>
 <script src="js/bilancio.js"></script>
 <script src="js/calendario.js"></script>
+<script src="js/task.js"></script>
 </body>
 </html>

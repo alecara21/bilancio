@@ -1,0 +1,142 @@
+/* =========================================================================
+   Servizio "Task" — cose da fare, con importanza e impegno.
+
+   DUE DIMENSIONI, DUE CANALI DIVERSI:
+     · importanza -> colore, su una scala che cresce in LUMINOSITA'
+     · impegno    -> tre barrette, nessun colore
+
+   Il semaforo rosso/giallo/verde e' stato scartato dopo il controllo: sotto
+   protanopia verde e giallo distano ΔE 1.7, cioe' sono lo stesso colore. La
+   scala per luminosita' si legge anche senza percepire le tinte, e l'etichetta
+   scritta accompagna sempre il colore.
+   ========================================================================= */
+
+.task { display: grid; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4) 0; }
+.task > * { min-width: 0; }
+
+/* scala dell'importanza: chiaro = bassa, scuro = alta */
+:root {
+  --imp-1: #f0a58f;
+  --imp-2: #d9542f;
+  --imp-3: #8f2a16;
+  --imp-1-testo: #8a4a3a;
+  --imp-2-testo: #a33a18;
+  --imp-3-testo: #8f2a16;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* su fondo scuro la scala si inverte: piu' importante = piu' chiaro */
+    --imp-1: #8f4a3a;
+    --imp-2: #d9603c;
+    --imp-3: #ffa88f;
+    --imp-1-testo: #d9a08f;
+    --imp-2-testo: #ff9170;
+    --imp-3-testo: #ffa88f;
+  }
+}
+:root[data-theme="dark"] {
+  --imp-1: #8f4a3a;
+  --imp-2: #d9603c;
+  --imp-3: #ffa88f;
+  --imp-1-testo: #d9a08f;
+  --imp-2-testo: #ff9170;
+  --imp-3-testo: #ffa88f;
+}
+
+.i1 { --imp: var(--imp-1); --imp-testo: var(--imp-1-testo); }
+.i2 { --imp: var(--imp-2); --imp-testo: var(--imp-2-testo); }
+.i3 { --imp: var(--imp-3); --imp-testo: var(--imp-3-testo); }
+
+/* ─────────────────────────── riepilogo ─────────────────────────── */
+.task-sommario {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2);
+}
+.somma {
+  text-align: center; padding: var(--sp-3) var(--sp-2);
+  background: var(--surface); border: 1px solid var(--brd-2);
+  border-radius: var(--r); box-shadow: var(--shadow);
+}
+.somma-n { font-size: 24px; font-weight: 650; letter-spacing: -0.02em; color: var(--imp-testo); }
+.somma-et { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+
+/* ─────────────────────────── elenco ─────────────────────────── */
+.task-list { display: grid; }
+
+.task-row {
+  display: grid; grid-template-columns: 30px 4px 1fr auto;
+  align-items: center; gap: var(--sp-3);
+  min-height: 62px; padding: 10px 0;
+  border: 0; border-bottom: 1px solid var(--brd-2);
+  background: none; width: 100%; text-align: left;
+  font: inherit; color: inherit;
+  transition: background 140ms ease, opacity 200ms ease;
+}
+.task-row:last-child { border-bottom: 0; }
+.task-row:hover { background: var(--wash); }
+
+/* casella di completamento: e' un pulsante a se', non tutta la riga */
+.task-spunta {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 2px solid var(--ink-3); background: transparent;
+  cursor: pointer; display: grid; place-items: center;
+  position: relative; transition: background 160ms ease, border-color 160ms ease;
+}
+.task-spunta::after { content: ""; position: absolute; inset: -8px; }  /* area tocco 46px */
+.task-spunta:hover { border-color: var(--imp); }
+.task-spunta .ico { width: 17px; height: 17px; color: #fff; opacity: 0; transition: opacity 160ms ease; }
+.task-row.is-fatta .task-spunta { background: var(--ink-3); border-color: var(--ink-3); }
+.task-row.is-fatta .task-spunta .ico { opacity: 1; }
+
+/* barretta dell'importanza: tutta l'altezza della riga */
+.task-barra { width: 4px; height: 34px; border-radius: 3px; background: var(--imp); }
+
+.task-corpo { min-width: 0; cursor: pointer; }
+.task-titolo {
+  display: block; font-size: 14.5px; font-weight: 550;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.task-row.is-fatta .task-titolo { text-decoration: line-through; color: var(--ink-3); }
+.task-row.is-fatta { opacity: .62; }
+
+.task-meta {
+  display: flex; align-items: center; gap: 5px var(--sp-2); flex-wrap: wrap;
+  font-size: 12px; color: var(--ink-3); margin-top: 2px;
+}
+.task-imp { color: var(--imp-testo); font-weight: 620; }
+.task-scaduta { color: var(--bad); font-weight: 620; }
+
+/* impegno: barrette, nessun colore — il secondo canale */
+.impegno { display: inline-flex; align-items: flex-end; gap: 2px; height: 11px; }
+.impegno i {
+  width: 3px; border-radius: 1px; background: var(--ink-3); opacity: .3;
+  display: block;
+}
+.impegno i:nth-child(1) { height: 5px; }
+.impegno i:nth-child(2) { height: 8px; }
+.impegno i:nth-child(3) { height: 11px; }
+.impegno i.on { opacity: 1; }
+
+.task-azione { display: grid; place-items: center; }
+.task-modifica {
+  width: 36px; height: 36px; border-radius: 10px; border: 0;
+  background: transparent; color: var(--ink-3); cursor: pointer;
+  display: grid; place-items: center;
+}
+.task-modifica:hover { background: var(--wash); color: var(--ink); }
+
+/* ─────────────────────────── modulo ─────────────────────────── */
+.scala { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.scala-b {
+  font: inherit; font-size: 13px; font-weight: 550;
+  min-height: 52px; padding: 8px 6px; border-radius: 12px;
+  border: 1px solid var(--brd); background: var(--surface-2); color: var(--ink-2);
+  cursor: pointer; display: grid; place-items: center; gap: 5px;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.scala-b .pallino { width: 13px; height: 13px; border-radius: 50%; background: var(--imp); }
+.scala-b.is-on { border-color: var(--imp); background: color-mix(in srgb, var(--imp) 16%, transparent); color: var(--imp-testo); font-weight: 650; }
+.scala-b.is-on .impegno i { opacity: 1; }
+
+.task-vuoto { display: grid; gap: var(--sp-2); justify-items: center; text-align: center;
+  padding: var(--sp-6) var(--sp-4); color: var(--ink-3); font-size: 13.5px; }
+.task-vuoto strong { color: var(--ink); font-size: 15px; font-weight: 620; }
